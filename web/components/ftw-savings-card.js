@@ -123,6 +123,14 @@ class FtwSavingsCard extends FtwElement {
       font-weight: 500;
       color: var(--fg-dim);
     }
+    .why {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      line-height: 1.35;
+      color: var(--fg-muted);
+      margin: 0;
+    }
+    .why:empty { display: none; }
 
     /* Sparkline — pure SVG. Bars above the zero line are green, below
        are red, both pulled from theme tokens so light-mode flips
@@ -237,6 +245,7 @@ class FtwSavingsCard extends FtwElement {
     this._abort = null;
     this._state = "loading"; // "loading" | "ready" | "empty" | "error"
     this._payload = null;
+    this._why = "";
   }
 
   connectedCallback() {
@@ -304,6 +313,7 @@ class FtwSavingsCard extends FtwElement {
           <span class="pct"   data-role="pct"></span>
         </div>
         <div class="sub" data-role="sub"></div>
+        <p class="why" data-role="why"></p>
         <div class="spark-wrap" data-role="spark-wrap">
           <div class="spark-grid">
             <div class="spark-scale" aria-hidden="true">
@@ -388,6 +398,21 @@ class FtwSavingsCard extends FtwElement {
         this._state = "error";
         this._paint();
       });
+
+    // Optional why-lines from the narrative layer. Failures are silent —
+    // savings numbers must not depend on the story endpoint.
+    apiFetch("/api/narrative?window=today", { signal })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((n) => {
+        if (seq !== this._reqSeq) return;
+        if (!n) { this._why = ""; return; }
+        const parts = [];
+        if (n.action) parts.push(n.action);
+        if (n.restraint) parts.push(n.restraint);
+        this._why = parts.slice(0, 2).join(" ");
+        this._paint();
+      })
+      .catch(() => { /* ignore */ });
   }
 
   // _paint redraws the dynamic parts of the card from this._payload
@@ -437,6 +462,7 @@ class FtwSavingsCard extends FtwElement {
     const totalEl  = root.querySelector('[data-role="total"]');
     const pctEl    = root.querySelector('[data-role="pct"]');
     const subEl    = root.querySelector('[data-role="sub"]');
+    const whyEl    = root.querySelector('[data-role="why"]');
     const sparkWrap = root.querySelector('[data-role="spark-wrap"]');
     const sparkEl  = root.querySelector('[data-role="spark"]');
     const labelsEl = root.querySelector('[data-role="labels"]');
@@ -448,6 +474,7 @@ class FtwSavingsCard extends FtwElement {
       totalEl.textContent = "—";
       pctEl.textContent = "";
       subEl.textContent = "";
+      if (whyEl) whyEl.textContent = "";
       sparkWrap.style.display = "none";
       if (axisMaxEl) axisMaxEl.textContent = "";
       if (axisMinEl) axisMinEl.textContent = "";
@@ -457,6 +484,7 @@ class FtwSavingsCard extends FtwElement {
       totalEl.textContent = "failed to load";
       pctEl.textContent = "";
       subEl.textContent = "";
+      if (whyEl) whyEl.textContent = "";
       sparkWrap.style.display = "none";
       if (axisMaxEl) axisMaxEl.textContent = "";
       if (axisMinEl) axisMinEl.textContent = "";
@@ -467,6 +495,7 @@ class FtwSavingsCard extends FtwElement {
       totalEl.textContent = "—";
       pctEl.textContent = "";
       subEl.innerHTML = 'No price provider configured — set <b>price.zone</b> to calculate historical savings.';
+      if (whyEl) whyEl.textContent = "";
       sparkWrap.style.display = "none";
       if (axisMaxEl) axisMaxEl.textContent = "";
       if (axisMinEl) axisMinEl.textContent = "";
@@ -477,6 +506,7 @@ class FtwSavingsCard extends FtwElement {
       totalEl.textContent = "—";
       pctEl.textContent = "";
       subEl.innerHTML = 'Awaiting price data for the selected range.';
+      if (whyEl) whyEl.textContent = "";
       sparkWrap.style.display = "none";
       if (axisMaxEl) axisMaxEl.textContent = "";
       if (axisMinEl) axisMinEl.textContent = "";
@@ -525,6 +555,7 @@ class FtwSavingsCard extends FtwElement {
     const baselineSek = baselineOre / 100;
     subEl.innerHTML =
       `Actual <b>${fmtSek(actualSek)} SEK</b>, no PV/battery <b>${fmtSek(baselineSek)} SEK</b>`;
+    if (whyEl) whyEl.textContent = this._why || "";
 
     // ---- Sparkline -----------------------------------------------------
     // Bars on a zero baseline, full height split 50/50 above/below.

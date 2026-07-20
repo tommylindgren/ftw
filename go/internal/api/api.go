@@ -269,6 +269,7 @@ func (s *Server) routes() {
 	s.handle("GET  /api/history", s.handleHistory)
 	s.handle("GET  /api/energy/daily", s.handleEnergyDaily)
 	s.handle("GET  /api/savings/daily", s.handleSavingsDaily)
+	s.handle("GET  /api/narrative", s.handleNarrative)
 	s.handle("GET  /api/prices", s.handlePrices)
 	s.handle("GET  /api/forecast", s.handleForecast)
 	s.handle("GET  /api/mpc/plan", s.handleMPCPlan)

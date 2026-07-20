@@ -382,6 +382,10 @@ body.ftw-app .val-ev-charging { color: var(--green-e); }
 body.ftw-app .val-ev-connected{ color: var(--amber); }
 
 /* Fuse — own row, one box per phase. */
+body.ftw-app .narrative-row {
+  display: block;
+  margin: 12px 0 0;
+}
 body.ftw-app .fuse-row {
   display: block;
   margin: 12px 0;
